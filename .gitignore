@@ -1,0 +1,80 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+.envrc
+*.env
+
+# Python distribution files
+*.egg
+*.egg-info/
+dist/
+build/
+pip-wheel-metadata/
+
+# Unit test / coverage reports
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Pytest cache
+.pytest_cache/
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
+
+# Docker
+*.tar
+docker-compose.override.yml
+
+# Spark local metadata
+.metastore_db/
+derby.log
+
+# Kafka logs (if running locally)
+kafka-logs/
+zookeeper-logs/
+
+# AWS credentials (always use env variables or secrets manager)
+.aws/
+*.pem
+
+# S3 download caches or local data dumps
+data/
+downloads/
+*.parquet
+*.csv
+*.json
+
+# Streamlit temp
+.streamlit/
+__pypackages__/
+
+# Compiled shared libraries
+*.so
+
+# Ignore model checkpoints (if training custom models)
+checkpoints/
+models/
+*.pt
+*.h5
+*.onnx
