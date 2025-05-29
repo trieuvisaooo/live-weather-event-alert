@@ -1,30 +1,40 @@
-# 🛰️ Real-Time Social Media Sentiment Tracker
+# 🌩️ Live Weather Event Alert System
 
-A real-time pipeline that ingests tweets and Reddit comments, performs sentiment analysis, and visualizes trending topics and sentiment shifts via an interactive dashboard.
-
----
-
-## 📌 Project Overview
-
-This project demonstrates how to build an end-to-end data engineering pipeline using real-time data from public APIs (Twitter & Reddit), Apache Kafka for streaming, Spark for processing, and Streamlit for visualization.
-
-### 🔍 Use Cases
-- Monitor public sentiment on events, products, or topics
-- Detect surges in negative or positive sentiment in real time
-- Track trending hashtags and keywords
+A real-time system that ingests weather data from the OpenWeatherMap API, detects extreme weather events using Spark Structured Streaming, pushes notifications via email, and visualizes alerts in a live Streamlit dashboard.
 
 ---
 
-## 🧰 Tech Stack
+## 🚀 Features
 
-| Layer             | Tools / Technologies                           |
-|-------------------|------------------------------------------------|
-| Data Ingestion    | Twitter API v2 (`tweepy`), Reddit API (`praw`) |
-| Message Queue     | Apache Kafka                                   |
-| Processing Engine | Apache Spark (Structured Streaming, Spark NLP) |
-| Storage           | Amazon S3 (for raw & processed data)           |
-| Dashboard         | Streamlit                                      |
-| CI/CD             | GitHub Actions + Docker                        |
-| Deployment        | AWS EC2 or Streamlit Cloud                     |
+- 🔄 Real-time ingestion of weather data from multiple cities
+- 🧠 Stream processing and event detection with Apache Spark
+- 🔔 Email notifications for extreme weather (e.g., heatwave, storm)
+- 📊 Interactive dashboard built with Streamlit
+- 🐳 Fully containerized with Docker and docker-compose
 
 ---
+
+## 📦 Tech Stack
+
+| Layer         | Tools                               |
+|---------------|-------------------------------------|
+| Ingestion     | Python + OpenWeatherMap API         |
+| Messaging     | Apache Kafka                        |
+| Processing    | Apache Spark (Structured Streaming) |
+| Notification  | SMTP (Gmail) or AWS SES             |
+| Dashboard     | Streamlit                           |
+| Deployment    | Docker, Docker Compose              |
+
+---
+
+## 🧩 Architecture
+[Weather API] --> [Ingestion Script] --> Kafka (weather_raw)
+                                   |
+                        --> Spark Streaming Job
+                                   ↓
+                     Detects Alert Events (storm, heat, etc.)
+                                   ↓
+              --> Kafka (weather_alerts) --> Streamlit Dashboard
+                                   ↓
+                      Sends Email via SES / SMTP
+

@@ -1,0 +1,183 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+    networks:
+      - weather_net
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 24
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - weather_net
+
+  topic_creator:
+    build: 
+      context: ./app/kafka_setup
+      dockerfile: Dockerfile
+    container_name: topic_creator
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file:
+      - ./app/config/.env
+    networks:
+      - weather_net
+
+  ingestion:
+    build: 
+      context: ./app/ingestion
+      dockerfile: Dockerfile
+    container_name: weather_ingestion
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file:
+      - ./app/config/.env
+    volumes:
+      - ./app/ingestion:/app
+      - ./app/ingestion/config:/app/config
+    networks:
+      - weather_net
+    restart: unless-stopped
+
+  spark_streaming:
+    build: 
+      context: ./app/spark_jobs
+      dockerfile: Dockerfile
+    container_name: spark_streaming
+    depends_on:
+      kafka:
+        condition: service_healthy
+      db: 
+        condition: service_healthy
+    env_file:
+      - ./app/config/.env
+    volumes:
+      - ./app/spark_jobs:/app
+      - ./app/spark_jobs/config:/app/config
+    command: >
+      bash -c "spark-submit 
+      --master local[*] 
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3,org.postgresql:postgresql:42.7.5 
+      /app/weather_streaming.py"
+    networks:
+      - weather_net
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+    restart: unless-stopped
+
+  notifier:
+    build: 
+      context: ./app/notifier
+      dockerfile: Dockerfile
+    container_name: weather_notifier
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file:
+      - ./app/config/.env
+    volumes:
+      - ./app/config:/app/config:ro
+      - ./logs:/app/logs
+    networks:
+      - weather_net
+    restart: unless-stopped
+
+  dashboard:
+    build: 
+      context: ./app/dashboard
+      dockerfile: Dockerfile
+    container_name: weather_dashboard
+    depends_on:
+      kafka:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    env_file:
+      - ./app/config/.env
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./app/dashboard:/app
+      - ./app/dashboard/config:/app/config
+    networks:
+      - weather_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  db:
+    image: postgres:13-alpine
+    container_name: postgres_db
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./app/config/.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-weather_db}
+      POSTGRES_USER: ${POSTGRES_USER:-weather_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-weather_password}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./app/config/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - weather_net
+
+volumes:
+  pgdata:
+  kafka_data:
+  zookeeper_data:
+  zookeeper_log:
+
+networks:
+  weather_net:
+    name: weather_network
+    driver: bridge
