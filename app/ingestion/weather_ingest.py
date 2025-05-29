@@ -6,9 +6,6 @@ import os
 
 API_KEY = os.environ.get("OPENWEATHERMAP_API_KEY")
 KAFKA_BROKER = os.environ.get("KAFKA_BROKER")
-# debug line
-# API_KEY = "247cc9ccc72d4aab177a6ecff2a42fc4"
-# KAFKA_BROKER = "localhost:9092"
 KAFKA_TOPIC = "weather_raw"
 
 # Read cities and update interval from config/cities.json

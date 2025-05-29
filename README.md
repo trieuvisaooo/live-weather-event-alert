@@ -23,18 +23,22 @@ A real-time system that ingests weather data from the OpenWeatherMap API, detect
 | Processing    | Apache Spark (Structured Streaming) |
 | Notification  | SMTP (Gmail) or AWS SES             |
 | Dashboard     | Streamlit                           |
+| Storage       | PostgreSQL                          |
 | Deployment    | Docker, Docker Compose              |
 
 ---
 
 ## 🧩 Architecture
-[Weather API] --> [Ingestion Script] --> Kafka (weather_raw)
-                                   |
-                        --> Spark Streaming Job
-                                   ↓
-                     Detects Alert Events (storm, heat, etc.)
-                                   ↓
-              --> Kafka (weather_alerts) --> Streamlit Dashboard
-                                   ↓
-                      Sends Email via SES / SMTP
+```text
+            [Weather API] --> [Ingestion Script] --> Kafka (weather_raw)
+                                            |
+                                    Spark Streaming Job
+                                            ↓
+                                Stores in PostgreSQL database
+                                            ↓
+                            Detects Alert Events (storm, heat, etc.)
+                                            ↓
+                        Kafka (weather_alerts) --> Streamlit Dashboard
+                                            ↓
+                                Sends Email via SES / SMTP
 
